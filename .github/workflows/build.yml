@@ -76,5 +76,9 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
           docker pull ${IMAGE}
           docker run --rm ${IMAGE} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
-
-  
+      
+      - name: Smoke tests (main; non-root 1000:1000)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
+          docker run --rm --user 1000:1000 ${IMAGE} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"

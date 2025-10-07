@@ -12,7 +12,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: HautechAI/devcontainer-universal
+  IMAGE_NAME: hautechai/devcontainer-universal
 
 jobs:
   build:
@@ -46,31 +46,29 @@ jobs:
             org.opencontainers.image.title=devcontainer-universal (Rust)
             org.opencontainers.image.description=Universal DevContainer extended with Rust toolchain and common native deps.
 
-      - name: Build image
-        id: build
+      - name: Build (PR smoketest)
+        if: github.event_name == 'pull_request'
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          load: ${{ github.event_name == 'pull_request' }}
+          target: smoketest
+          push: false
+          load: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-      - name: Smoke tests (PR; local image, root)
-        if: github.event_name == 'pull_request'
-        run: |
-          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
-          echo "Using image: ${IMAGE_TAG}"
-          docker run --rm ${IMAGE_TAG} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
-
-      - name: Smoke tests (PR; vscode user)
-        if: github.event_name == 'pull_request'
-        run: |
-          IMAGE_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
-          docker run --rm --user vscode ${IMAGE_TAG} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
 
       - name: Smoke tests (main; remote image, root)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -84,4 +82,3 @@ jobs:
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
           docker run --rm --user vscode ${IMAGE} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
-

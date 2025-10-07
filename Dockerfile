@@ -7,6 +7,9 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:${PATH}
 
+# Shared Playwright browsers path
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
 # Minimal native build dependencies commonly required by Rust crates
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -18,6 +21,7 @@ RUN apt-get update \
         curl \
         git \
         ca-certificates \
+        gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust toolchain (stable) system-wide via rustup and components
@@ -38,6 +42,14 @@ RUN echo 'export PATH=/usr/local/cargo/bin:$PATH' > /etc/profile.d/cargo.sh \
 # - Nightly is not installed by default; use rust-toolchain.toml if needed.
 ########################################
 
+# Install Doppler CLI and Playwright browsers with deps; cleanup apt lists
+RUN set -eux; \
+    curl -Ls https://cli.doppler.com/install.sh | sh; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    npx --yes playwright@latest install --with-deps; \
+    chmod -R a+rx "${PLAYWRIGHT_BROWSERS_PATH}"; \
+    rm -rf /var/lib/apt/lists/*
+
 # Smoketest stage to validate Rust toolchain components exist for root and a non-root user.
 # This stage is built in CI for pull_request events (no docker load/push).
 FROM base AS smoketest
@@ -47,7 +59,11 @@ RUN bash -lc 'set -euo pipefail; \
     command -v rustc >/dev/null && rustc --version; \
     command -v cargo >/dev/null && cargo --version; \
     command -v rustfmt >/dev/null && rustfmt --version; \
-    command -v cargo >/dev/null && cargo clippy -V'
+    command -v cargo >/dev/null && cargo clippy -V; \
+    echo "[smoketest] doppler"; \
+    command -v doppler >/dev/null && doppler --version; \
+    echo "[smoketest] playwright"; \
+    test -d "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
 # Non-root validation with a generic user (no vscode assumption)
 RUN useradd -m -u 10001 -s /bin/bash tester
 USER tester
@@ -57,7 +73,11 @@ RUN bash -lc 'set -euo pipefail; \
     command -v rustc >/dev/null && rustc --version; \
     command -v cargo >/dev/null && cargo --version; \
     command -v rustfmt >/dev/null && rustfmt --version; \
-    command -v cargo >/dev/null && cargo clippy -V'
+    command -v cargo >/dev/null && cargo clippy -V; \
+    echo "[smoketest] doppler (tester)"; \
+    command -v doppler >/dev/null && doppler --version >/dev/null; \
+    echo "[smoketest] playwright (tester)"; \
+    test -r "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
 
 # Default/final image stage should remain last so main builds push the full image
 FROM base AS final

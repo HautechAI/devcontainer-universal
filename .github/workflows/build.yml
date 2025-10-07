@@ -75,10 +75,10 @@ jobs:
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
           docker pull ${IMAGE}
-          docker run --rm ${IMAGE} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
-      
-      - name: Smoke tests (main; non-root 1000:1000)
+          docker run --rm ${IMAGE} bash -lc 'set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V; command -v doppler && doppler --version; test -d "$PLAYWRIGHT_BROWSERS_PATH" && [ -n "$(ls -A "$PLAYWRIGHT_BROWSERS_PATH")" ]'
+
+      - name: Smoke tests (main; remote image, vscode)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
-          docker run --rm --user 1000:1000 ${IMAGE} bash -lc "set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V"
+          docker run --rm --user vscode ${IMAGE} bash -lc 'set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V; command -v doppler && doppler --version >/dev/null; test -r "$PLAYWRIGHT_BROWSERS_PATH" && [ -n "$(ls -A "$PLAYWRIGHT_BROWSERS_PATH")" ]'

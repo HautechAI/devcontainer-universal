@@ -1,6 +1,6 @@
 devcontainer-universal
 
-Container image: ghcr.io/HautechAI/devcontainer-universal
+Container image: ghcr.io/hautechai/devcontainer-universal
 
 Overview
 - Extends mcr.microsoft.com/devcontainers/universal:2 with Rust (stable) via rustup.
@@ -10,9 +10,9 @@ Overview
 
 Usage
 - Dev Container: set devcontainer.json to use the published image:
-  - "image": "ghcr.io/HautechAI/devcontainer-universal:stable"
+  - "image": "ghcr.io/hautechai/devcontainer-universal:stable"
 - Docker CLI:
-  - docker run --rm -it ghcr.io/HautechAI/devcontainer-universal:stable bash
+  - docker run --rm -it ghcr.io/hautechai/devcontainer-universal:stable bash
 
 Tags
 - latest, stable, sha-<short>, YYYYMMDD.

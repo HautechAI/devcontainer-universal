@@ -40,7 +40,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=raw,value=stable,enable=${{ github.ref == 'refs/heads/main' }}
-            type=raw,value=sha-${{ github.sha }}
+            type=sha,format=short,prefix=sha-
             type=raw,value={{date 'YYYYMMDD'}},enable=${{ github.ref == 'refs/heads/main' }}
           labels: |
             org.opencontainers.image.title=devcontainer-universal (Rust)

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/universal:2 AS base
+FROM mcr.microsoft.com/devcontainers/universal:4.1-noble AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 

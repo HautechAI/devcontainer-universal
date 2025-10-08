@@ -22,6 +22,7 @@ RUN apt-get update \
         git \
         ca-certificates \
         gnupg \
+        ripgrep \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Rust toolchain (stable) system-wide via rustup and components
@@ -60,6 +61,8 @@ RUN bash -lc 'set -euo pipefail; \
     command -v cargo >/dev/null && cargo --version; \
     command -v rustfmt >/dev/null && rustfmt --version; \
     command -v cargo >/dev/null && cargo clippy -V; \
+    echo "[smoketest] rg"; \
+    command -v rg >/dev/null && rg --version; \
     echo "[smoketest] doppler"; \
     command -v doppler >/dev/null && doppler --version; \
     echo "[smoketest] playwright"; \
@@ -74,6 +77,8 @@ RUN bash -lc 'set -euo pipefail; \
     command -v cargo >/dev/null && cargo --version; \
     command -v rustfmt >/dev/null && rustfmt --version; \
     command -v cargo >/dev/null && cargo clippy -V; \
+    echo "[smoketest] rg (tester)"; \
+    command -v rg >/dev/null && rg --version >/dev/null; \
     echo "[smoketest] doppler (tester)"; \
     command -v doppler >/dev/null && doppler --version >/dev/null; \
     echo "[smoketest] playwright (tester)"; \

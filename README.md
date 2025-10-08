@@ -5,7 +5,7 @@ Container image: ghcr.io/hautechai/devcontainer-universal
 Overview
 - Extends mcr.microsoft.com/devcontainers/universal:2 with Rust (stable) via rustup.
 - System-wide install with RUSTUP_HOME=/usr/local/rustup and CARGO_HOME=/usr/local/cargo; PATH includes /usr/local/cargo/bin for all users.
-- Components: rustfmt, clippy, rust-src. Native deps: build-essential, clang, lld, pkg-config, libssl-dev, zlib1g-dev, cmake, curl, git, ca-certificates.
+- Components: rustfmt, clippy, rust-src. Native deps: build-essential, clang, lld, pkg-config, libssl-dev, zlib1g-dev, cmake, curl, git, ca-certificates, ripgrep (rg).
 - Optional utilities: cargo-edit, cargo-nextest.
  - Includes Doppler CLI and Playwright browsers preinstalled. Browsers are shared at /ms-playwright (PLAYWRIGHT_BROWSERS_PATH) for all users.
 

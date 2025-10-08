@@ -13,6 +13,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: hautechai/devcontainer-universal
+  GLIBC_MIN: "2.34"
 
 jobs:
   build:
@@ -76,4 +77,5 @@ jobs:
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
           docker pull ${IMAGE}
           docker run --rm ${IMAGE} bash -lc 'set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V; command -v rg && rg --version; command -v doppler && doppler --version; test -d "$PLAYWRIGHT_BROWSERS_PATH" && [ -n "$(ls -A "$PLAYWRIGHT_BROWSERS_PATH")" ]'
+          docker run --rm -e GLIBC_MIN="${{ env.GLIBC_MIN }}" ${IMAGE} bash -lc 'set -euo pipefail; ldd --version; v=$(getconf GNU_LIBC_VERSION | cut -d" " -f2); echo "glibc=$v (min=${GLIBC_MIN})"; dpkg --compare-versions "$v" ge "${GLIBC_MIN}" || { echo "ERROR: glibc < ${GLIBC_MIN}"; exit 1; }'
 

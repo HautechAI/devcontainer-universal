@@ -75,5 +75,5 @@ jobs:
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:stable
           docker pull ${IMAGE}
-          docker run --rm ${IMAGE} bash -lc 'set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V; command -v doppler && doppler --version; test -d "$PLAYWRIGHT_BROWSERS_PATH" && [ -n "$(ls -A "$PLAYWRIGHT_BROWSERS_PATH")" ]'
+          docker run --rm ${IMAGE} bash -lc 'set -euo pipefail; rustc --version; cargo --version; rustfmt --version; cargo clippy -V; command -v rg cargo clippy -V; cargo clippy -V;  rg --version; command -v doppler && doppler --version; test -d "$PLAYWRIGHT_BROWSERS_PATH" && [ -n "$(ls -A "$PLAYWRIGHT_BROWSERS_PATH")" ]'
 

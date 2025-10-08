@@ -7,8 +7,9 @@ ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:${PATH}
 
-# Shared Playwright browsers path
-ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+# Shared Playwright browsers path and GLIBC minimum
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
+    GLIBC_MIN=2.34
 
 # Minimal native build dependencies commonly required by Rust crates
 RUN apt-get update \
@@ -44,9 +45,8 @@ RUN echo 'export PATH=/usr/local/cargo/bin:$PATH' > /etc/profile.d/cargo.sh \
 ########################################
 
 # Install Doppler CLI and Playwright browsers with deps; cleanup apt lists
-RUN set -eux; \
+RUN set -euo pipefail; \
     curl -Ls https://cli.doppler.com/install.sh | sh; \
-    export DEBIAN_FRONTEND=noninteractive; \
     npx --yes playwright@latest install --with-deps; \
     chmod -R a+rx "${PLAYWRIGHT_BROWSERS_PATH}"; \
     rm -rf /var/lib/apt/lists/*
@@ -54,7 +54,7 @@ RUN set -eux; \
 # Smoketest stage to validate Rust toolchain components exist for root and a non-root user.
 # This stage is built in CI for pull_request events (no docker load/push).
 FROM base AS smoketest
-# Root validation
+# Root validation + GLIBC assertion
 RUN bash -lc 'set -euo pipefail; \
     echo "[smoketest] root checks"; \
     command -v rustc >/dev/null && rustc --version; \
@@ -66,11 +66,14 @@ RUN bash -lc 'set -euo pipefail; \
     echo "[smoketest] doppler"; \
     command -v doppler >/dev/null && doppler --version; \
     echo "[smoketest] playwright"; \
-    test -d "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
-# GLIBC assertion (root)
-RUN bash -lc 'set -euo pipefail;     echo "[smoketest] libc";     ldd --version;     v=$(getconf GNU_LIBC_VERSION | awk '{print $2}'); echo "glibc=$v";     dpkg --compare-versions "$v" ge 2.34 || { echo "ERROR: glibc < 2.34"; exit 1; }'
+    test -d "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]; \
+    echo "[smoketest] libc"; \
+    ldd --version; \
+    v=$(getconf GNU_LIBC_VERSION | cut -d" " -f2); \
+    echo "glibc=$v (min=${GLIBC_MIN})"; \
+    dpkg --compare-versions "$v" ge "${GLIBC_MIN}" || { echo "ERROR: glibc < ${GLIBC_MIN}"; exit 1; }'
 
-# Non-root validation with a generic user (no vscode assumption)
+# Non-root validation with a generic user (no vscode assumption) + GLIBC assertion
 RUN useradd -m -u 10001 -s /bin/bash tester
 USER tester
 ENV PATH=/usr/local/cargo/bin:${PATH}
@@ -85,9 +88,12 @@ RUN bash -lc 'set -euo pipefail; \
     echo "[smoketest] doppler (tester)"; \
     command -v doppler >/dev/null && doppler --version >/dev/null; \
     echo "[smoketest] playwright (tester)"; \
-    test -r "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
-# GLIBC assertion (non-root)
-RUN bash -lc 'set -euo pipefail;     echo "[smoketest] libc (tester)";     ldd --version;     v=$(getconf GNU_LIBC_VERSION | awk '{print $2}'); echo "glibc=$v";     dpkg --compare-versions "$v" ge 2.34 || { echo "ERROR: glibc < 2.34"; exit 1; }'
+    test -r "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]; \
+    echo "[smoketest] libc (tester)"; \
+    ldd --version; \
+    v=$(getconf GNU_LIBC_VERSION | cut -d" " -f2); \
+    echo "glibc=$v (min=${GLIBC_MIN})"; \
+    dpkg --compare-versions "$v" ge "${GLIBC_MIN}" || { echo "ERROR: glibc < ${GLIBC_MIN}"; exit 1; }'
 
 
 # Default/final image stage should remain last so main builds push the full image

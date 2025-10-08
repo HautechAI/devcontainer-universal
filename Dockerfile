@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/universal:4.1-noble AS base
+FROM mcr.microsoft.com/devcontainers/universal:4-linux AS base
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -67,6 +67,9 @@ RUN bash -lc 'set -euo pipefail; \
     command -v doppler >/dev/null && doppler --version; \
     echo "[smoketest] playwright"; \
     test -d "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
+# GLIBC assertion (root)
+RUN bash -lc 'set -euo pipefail;     echo "[smoketest] libc";     ldd --version;     v=$(getconf GNU_LIBC_VERSION | awk '{print $2}'); echo "glibc=$v";     dpkg --compare-versions "$v" ge 2.34 || { echo "ERROR: glibc < 2.34"; exit 1; }'
+
 # Non-root validation with a generic user (no vscode assumption)
 RUN useradd -m -u 10001 -s /bin/bash tester
 USER tester
@@ -83,6 +86,9 @@ RUN bash -lc 'set -euo pipefail; \
     command -v doppler >/dev/null && doppler --version >/dev/null; \
     echo "[smoketest] playwright (tester)"; \
     test -r "${PLAYWRIGHT_BROWSERS_PATH}" && [ -n "$(ls -A "${PLAYWRIGHT_BROWSERS_PATH}")" ]'
+# GLIBC assertion (non-root)
+RUN bash -lc 'set -euo pipefail;     echo "[smoketest] libc (tester)";     ldd --version;     v=$(getconf GNU_LIBC_VERSION | awk '{print $2}'); echo "glibc=$v";     dpkg --compare-versions "$v" ge 2.34 || { echo "ERROR: glibc < 2.34"; exit 1; }'
+
 
 # Default/final image stage should remain last so main builds push the full image
 FROM base AS final

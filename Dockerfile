@@ -43,9 +43,10 @@ RUN echo 'export PATH=/usr/local/cargo/bin:$PATH' > /etc/profile.d/cargo.sh \
 # Notes:
 # - Nightly is not installed by default; use rust-toolchain.toml if needed.
 ########################################
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Install Doppler CLI and Playwright browsers with deps; cleanup apt lists
-RUN set -euo pipefail; \
+RUN set -euo; \
     curl -Ls https://cli.doppler.com/install.sh | sh; \
     npx --yes playwright@latest install --with-deps; \
     chmod -R a+rx "${PLAYWRIGHT_BROWSERS_PATH}"; \
